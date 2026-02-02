@@ -36,34 +36,60 @@
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
-    const video = document.getElementById('camera');
+document.addEventListener("DOMContentLoaded", function () {
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => video.srcObject = stream)
-      .catch(() => {
-        document.getElementById('status').innerText = "Camera access denied.";
-      });
+  const video = document.getElementById('camera');
+  const status = document.getElementById('status');
 
-    // Populate villa numbers 1–14
-    const villaSelect = document.getElementById('villaNum');
-    for (let i = 1; i <= 14; i++) {
-      const option = document.createElement('option');
-      option.value = i;
-      option.text = i;
-      villaSelect.appendChild(option);
+  // Start camera
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => video.srcObject = stream)
+    .catch(() => {
+      status.innerText = "Camera access denied or not supported.";
+    });
+
+  // Populate villa numbers 1–14
+  const villaSelect = document.getElementById('villaNum');
+  for (let i = 1; i <= 14; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.text = i;
+    villaSelect.appendChild(option);
+  }
+
+  window.takePhoto = function () {
+    const block = document.getElementById('block').value;
+    const villaNum = document.getElementById('villaNum').value;
+
+    if (!block || !villaNum) {
+      status.innerText = "Select Block and Villa Number first.";
+      return;
     }
 
-    function takePhoto() {
-      const block = document.getElementById('block').value;
-      const villaNum = document.getElementById('villaNum').value;
-      const status = document.getElementById('status');
+    const villa = block + villaNum;
 
-      if (!block || !villaNum) {
-        status.innerText = "Select Block and Villa Number first.";
-        return;
-      }
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
 
-      const villa = block + villaNum;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
 
-      const canvas = document.getElementById('canvas');
-      const context = canvas.getCo
+    canvas.toBlob(blob => {
+      const fileName = `DG_${villa}_DG.jpg`;
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+
+      status.innerText = `Saved: ${fileName}`;
+    }, 'image/jpeg', 0.95);
+  };
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
+
+});
+</script>
